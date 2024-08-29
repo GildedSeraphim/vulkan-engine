@@ -1,5 +1,6 @@
 #include "lve_pipeline.hpp"
 
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -34,6 +35,9 @@ namespace lve {
     }
 
     void LvePipeline::createGraphicsPipeline(const std::string &vertFilepath, const std::string &fragFilepath, const PipelineConfigInfo &configInfo) {
+        assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
+        assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipleine: no renderPass provided in configInfo");
+
         auto vertCode = readFile(vertFilepath);
         auto fragCode = readFile(fragFilepath);
 
@@ -71,6 +75,7 @@ namespace lve {
         pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
         pipelineInfo.pViewportState = &configInfo.viewportInfo;
         pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
+        pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
         pipelineInfo.pColorBlendState = &configInfo.colorBlendInfo;
         pipelineInfo.pDepthStencilState = &configInfo.depthStencilInfo;
         pipelineInfo.pDynamicState = nullptr;
