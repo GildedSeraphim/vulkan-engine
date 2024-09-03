@@ -1,3 +1,0 @@
-[submodule "subdirectory/vk-bootstrap"]
-	path = subdirectory/vk-bootstrap
-	url = https://github.com/charles-lunarg/vk-bootstrap
