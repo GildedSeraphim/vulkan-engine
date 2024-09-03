@@ -6,7 +6,6 @@
 #include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
-#include <VkBootstrap.h>
 
 namespace lve {
     FirstApp::FirstApp() {

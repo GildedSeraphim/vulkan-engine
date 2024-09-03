@@ -1,61 +1,74 @@
 {
-  description = "Description for the project";
+    description = "Vulkan Dev Flake";
 
-  inputs = {
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-  };
+    inputs = {
+        nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    };
 
-  outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        # To import a flake module
-        # 1. Add foo to inputs
-        # 2. Add foo as a parameter to the outputs function
-        # 3. Add here: foo.flakeModule
-
-      ];
-      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
-      perSystem = { config, self', inputs', pkgs, system, ... }: {
-        # Per-system attributes can be defined here. The self' and inputs'
-        # module parameters provide easy access to attributes of the same
-        # system.
-
-        # Equivalent to  inputs'.nixpkgs.legacyPackages.hello;
-	devShells.default = pkgs.mkShell {
-	  packages = with pkgs; [
-	    boost
-	    cmake
-            catch2
-            glm
-
-            #Xorg
-       	    xorg.libXxf86vm
-            xorg.libXi
-            xorg.libX11
-            xorg.libXrandr
-
-            #Vulkan
-            glfw
-            shaderc
-            vulkan-volk
-            vulkan-headers
-            vulkan-loader
-            vulkan-validation-layers
-            vulkan-tools
-            shaderc
-            renderdoc
-            tracy
-            vulkan-tools-lunarg
-          ];
+    outputs = { self, nixpkgs }@inputs:
+    let
+        lib = nixpkgs.lib;
+        pkgs = import inputs.nixpkgs {
+            system = "x86_64-linux";
         };
+    in 
+        {
+        devShells.x86_64-linux.default = pkgs.mkShell rec {
+            name = "Test Env";
+            nativeBuildInputs = with pkgs;[
+                
+            ];
 
-      };
-      flake = {
-        # The usual flake attributes can be defined here, including system-
-        # agnostic ones like nixosModule and system-enumerating ones, although
-        # those are more easily expressed in perSystem.
+            buildInputs = with pkgs;[
+		libxkbcommon
+		libGL
 
-      };
+		wayland
+
+		SDL2
+		SDL2_ttf
+		
+                cmake
+                catch2
+                glm
+                gcc
+        
+                pkg-config
+
+                xorg.libX11
+                xorg.libXrandr
+                xorg.libXcursor
+                xorg.libXi
+                xorg.libXxf86vm
+
+                cargo
+
+                glfw3
+                mesa
+                glslang
+                renderdoc
+                spirv-tools
+                vulkan-volk
+                vulkan-tools
+                vulkan-loader
+                vulkan-validation-layers
+                vulkan-tools-lunarg
+                vulkan-extension-layer
+            ];
+
+            packages = with pkgs; [
+                
+            ];
+
+            shellHook = ''
+                echo "Welcome to my Vulkan Shell"
+            '';
+
+            LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
+            VK_LAYER_PATH = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";
+            VULKAN_SDK = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";
+            XDG_DATA_DIRS = builtins.getEnv "XDG_DATA_DIRS";
+            XDG_RUNTIME_DIR = "/run/user/1000";
+        };
     };
 }
