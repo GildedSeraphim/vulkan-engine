@@ -23,6 +23,7 @@ namespace lve {
             glfwPollEvents();
             drawFrame();
         }
+        vkDeviceWaitIdle(lveDevice.device());
     }
     void FirstApp::createPipelineLayout() {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -89,7 +90,7 @@ namespace lve {
         uint32_t imageIndex;
         auto result = lveSwapChain.acquireNextImage(&imageIndex);
 
-        if (result != VK_SUCCESS || result != VK_SUBOPTIMAL_KHR) {
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("failed to acquire next swap chain image!");
         }
 

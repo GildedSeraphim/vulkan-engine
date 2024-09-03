@@ -1,14 +1,15 @@
 #include "lve_pipeline.hpp"
 
+// std
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
 
 namespace lve {
+
     LvePipeline::LvePipeline(LveDevice &device, const std::string &vertFilepath, const std::string &fragFilepath, const PipelineConfigInfo &configInfo)
-        : lveDevice{device} { // 10:01
+        : lveDevice{device} {
         createGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
     }
 
@@ -18,12 +19,17 @@ namespace lve {
         vkDestroyPipeline(lveDevice.device(), graphicsPipeline, nullptr);
     }
 
-    std::vector<char> LvePipeline::readFile(const std::string &filePath) {
-        std::ifstream file{filePath, std::ios::ate | std::ios::binary};
+    void LvePipeline::bind(VkCommandBuffer commandBuffer) {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+    }
+
+    std::vector<char> LvePipeline::readFile(const std::string &filepath) {
+        std::ifstream file{filepath, std::ios::ate | std::ios::binary};
 
         if (!file.is_open()) {
-            throw std::runtime_error("failed to open file: " + filePath);
+            throw std::runtime_error("failed to open file: " + filepath);
         }
+
         size_t fileSize = static_cast<size_t>(file.tellg());
         std::vector<char> buffer(fileSize);
 
@@ -36,7 +42,7 @@ namespace lve {
 
     void LvePipeline::createGraphicsPipeline(const std::string &vertFilepath, const std::string &fragFilepath, const PipelineConfigInfo &configInfo) {
         assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
-        assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipleine: no renderPass provided in configInfo");
+        assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline: no renderPass provided in configInfo");
 
         auto vertCode = readFile(vertFilepath);
         auto fragCode = readFile(fragFilepath);
@@ -106,12 +112,8 @@ namespace lve {
         createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
         if (vkCreateShaderModule(lveDevice.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shader module!");
+            throw std::runtime_error("failed to create shader module");
         }
-    }
-
-    void LvePipeline::bind(VkCommandBuffer commandBuffer) {
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
     }
 
     PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
@@ -139,9 +141,17 @@ namespace lve {
         configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
         configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
         configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
-        configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f;
-        configInfo.rasterizationInfo.depthBiasClamp = 0.0f;
-        configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;
+        configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f; // Optional
+        configInfo.rasterizationInfo.depthBiasClamp = 0.0f;          // Optional
+        configInfo.rasterizationInfo.depthBiasSlopeFactor = 0.0f;    // Optional
+
+        configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
+        configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        configInfo.multisampleInfo.minSampleShading = 1.0f;          // Optional
+        configInfo.multisampleInfo.pSampleMask = nullptr;            // Optional
+        configInfo.multisampleInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+        configInfo.multisampleInfo.alphaToOneEnable = VK_FALSE;      // Optional
 
         configInfo.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
